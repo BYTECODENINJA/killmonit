@@ -1,10 +1,15 @@
 use std::time::{Duration, Instant};
 use ratatui::crossterm::event::{self, Event, KeyEvent, KeyEventKind, KeyCode};
-use ratatui::widgets::{Paragraph, Block, Borders};
+use ratatui::widgets::{Paragraph, Block, BorderType, Borders};
 use ratatui::{DefaultTerminal, Frame};
-use ratatui::layout::{Constraint, Layout};
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::style::{Style, Color, Stylize};
+use ratatui::text::{Line, Span};
+
 
 const TICK_RATE: Duration = Duration::from_millis(500);
+const Muted: Color = Color::DarkGray;
+const ACCENT: Color = Color::Cyan;
 
 struct App{
     running: bool,
@@ -72,12 +77,53 @@ impl App {
             Constraint::Percentage(50),
         ]).areas(top);
 
-        (frame).render_widget(Block::bordered().title("KillMonit"), header);
-        (frame).render_widget(Block::bordered().title("CPU"), cpu);
-        (frame).render_widget(Block::bordered().title("Memory"), memory);
-        (frame).render_widget(Block::bordered().title("History"), history);
-        (frame).render_widget(Block::bordered().title("Processes"), processes);
-        (frame).render_widget(Paragraph::new("Press q Or Esc key to quit."), footer);
+        self.render_header(frame, header);
+        (frame).render_widget(panel("CPU"), cpu);
+        (frame).render_widget(panel("Memory"), memory);
+        (frame).render_widget(panel("History"), history);
+        (frame).render_widget(panel("Processes"), processes);
+        self.render_footer(frame, footer);
 
     }
+
+    fn render_header(&mut self, frame: &mut Frame, area: Rect) {
+       let sep = Span::styled(" | ", Muted);
+        let line = Line::from(vec![
+            Span::styled("KillMonit", Style::default().bold().fg(ACCENT)),
+            sep,
+            Span::raw("Live system monitor")
+        ]);
+
+        let block = Block::bordered()
+            .border_type(BorderType::Rounded)
+            .border_style(Muted);
+
+        (frame).render_widget(Paragraph::new(line).block(block), area);
+    }
+
+    fn render_footer(&mut self, frame: &mut Frame, area: Rect) {
+        let key = |k: &'static str, desc: &'static str| {
+            [
+               Span::styled(format!(" {k} "), Style::new().fg(Color::Black).bg(ACCENT)),
+                Span::styled(format!(" {desc}\t "), Muted),
+            ]
+        };
+
+        let spans: Vec<Span> =[
+            key("q", "Quit")
+        ]
+            .into_iter()
+            .flatten()
+            .collect();
+
+        (frame).render_widget(Line::from(spans), area)
+    }
+
+}
+
+fn panel(title: &str) -> Block<'static> {
+    Block::bordered()
+        .border_type(BorderType::Rounded)
+        .border_style(Muted)
+        .title(Line::from(format!("{title}")).fg(ACCENT).bold())
 }
