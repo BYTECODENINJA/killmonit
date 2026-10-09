@@ -9,7 +9,7 @@ use sysinfo::{MINIMUM_CPU_UPDATE_INTERVAL, System};
 
 
 const TICK_RATE: Duration = Duration::from_millis(500);
-const Muted: Color = Color::DarkGray;
+const MUTED: Color = Color::DarkGray;
 const ACCENT: Color = Color::Cyan;
 
 struct App{
@@ -95,7 +95,7 @@ impl App {
 
         self.render_header(frame, header);
         (self).render_cpu(frame, cpu);
-        (frame).render_widget(panel("Memory"), memory);
+        (self).render_memory(frame, memory);
         (frame).render_widget(panel("History"), history);
         (frame).render_widget(panel("Processes"), processes);
         self.render_footer(frame, footer);
@@ -103,7 +103,7 @@ impl App {
     }
 
     fn render_header(&mut self, frame: &mut Frame, area: Rect) {
-       let sep = Span::styled(" | ", Muted);
+       let sep = Span::styled(" | ", MUTED);
         let uptime = System::uptime();
 
         let line = Line::from(vec![
@@ -116,7 +116,7 @@ impl App {
 
         let block = Block::bordered()
             .border_type(BorderType::Rounded)
-            .border_style(Muted);
+            .border_style(MUTED);
 
         (frame).render_widget(Paragraph::new(line).block(block), area);
     }
@@ -125,7 +125,7 @@ impl App {
         let key = |k: &'static str, desc: &'static str| {
             [
                Span::styled(format!(" {k} "), Style::new().fg(Color::Black).bg(ACCENT)),
-                Span::styled(format!(" {desc}\t "), Muted),
+                Span::styled(format!(" {desc}\t "), MUTED),
             ]
         };
 
@@ -154,11 +154,32 @@ impl App {
 
     }
 
+    fn render_memory(&self, frame: &mut Frame, area: Rect) {
+        let gb = |bytes: u64| bytes as f64 / 1024.0 / 1024.0 / 1024.0;
+        let sys = &self.system;
+
+        let lines = vec![
+            Line::from(format!(
+                "RAM {:.1}/{:.1} GB",
+                gb(sys.used_memory()),
+                gb(sys.total_memory())
+            )),
+
+            Line::from(format!(
+                "Swap {:.1}/{:.1} GB",
+                gb(sys.used_swap()),
+                gb(sys.total_swap())
+            ))
+        ];
+
+        (frame).render_widget(Paragraph::new(lines).block(panel("Memory")), area);
+    }
+
 }
 
 fn panel(title: &str) -> Block<'static> {
     Block::bordered()
         .border_type(BorderType::Rounded)
-        .border_style(Muted)
+        .border_style(MUTED)
         .title(Line::from(format!("{title}")).fg(ACCENT).bold())
 }
