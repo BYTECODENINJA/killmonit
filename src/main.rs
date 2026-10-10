@@ -212,7 +212,30 @@ impl App {
         let inner = block.inner(area);
         (frame).render_widget(block, area);
 
+        let [ram_area, swap_area, disk_area] = Layout::vertical([
+            Constraint::Length(1); 3
+        ]).spacing(1).areas(inner);
 
+        let sys = &self.system;
+        (frame).render_widget(
+            used_gauge("RAM", sys.used_memory(), sys.total_memory()),
+            ram_area
+        );
+
+        (frame).render_widget(
+            used_gauge("SWAP", sys.used_swap(), sys.total_swap()),
+            swap_area
+        );
+
+        if let Some(disk) = self.disks.list().first() {
+            let total = disk.total_space();
+            let used = total - disk.available_space();
+            let label = format!("Disk {}", disk.mount_point().display());
+            (frame).render_widget(
+                used_gauge(&label, used, total),
+                disk_area
+            );
+        }
     }
 
 }
