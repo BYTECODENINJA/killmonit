@@ -181,7 +181,7 @@ impl App {
                     Span::from(format!("{usage:>3.0}%")).fg(level_color(usage))
                 ]))
                 .filled_symbol("▉")
-                .unfilled_symbol(" ")
+                .unfilled_symbol("▓")
                 .filled_style(level_color(usage))
                 .unfilled_style(MUTED);
 
@@ -208,24 +208,11 @@ impl App {
     }
 
     fn render_memory(&self, frame: &mut Frame, area: Rect) {
-        let gb = |bytes: u64| bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-        let sys = &self.system;
+       let block = panel("Memory");
+        let inner = block.inner(area);
+        (frame).render_widget(block, area);
 
-        let lines = vec![
-            Line::from(format!(
-                "RAM {:.1}/{:.1} GB",
-                gb(sys.used_memory()),
-                gb(sys.total_memory())
-            )),
 
-            Line::from(format!(
-                "Swap {:.1}/{:.1} GB",
-                gb(sys.used_swap()),
-                gb(sys.total_swap())
-            ))
-        ];
-
-        (frame).render_widget(Paragraph::new(lines).block(panel("Memory")), area);
     }
 
 }
@@ -240,7 +227,7 @@ fn panel(title: &str) -> Block<'static> {
 fn level_color(percent: f64) -> Color {
     if percent < 50.0 {
         Color::Green
-    } else if percent < 80.0 {
+    } else if percent < 60.0 {
         Color::Yellow
     } else {
         Color::Red
